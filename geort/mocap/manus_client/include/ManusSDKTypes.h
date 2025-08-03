@@ -1640,6 +1640,25 @@ typedef void(*GestureStreamCallback_t)(const GestureStreamInfo* const p_GestureS
 } // extern "C"
 #endif
 
+
+// ------------------------------------------------------------------------------------------------------------------------------
+// start of LoggingSeverity
+// ------------------------------------------------------------------------------------------------------------------------------
+/// @brief Used to tell what severity the log is
+typedef enum LogSeverity
+{
+	LogSeverity_Debug,
+	LogSeverity_Info,
+	LogSeverity_Warn,
+	LogSeverity_Error
+} LogSeverity;
+
+typedef struct RawDeviceDataInfo
+{
+	ManusTimestamp publishTime; //default = 0;	//	DateTime.UtcNow.
+	uint32_t rawDeviceDataCount; //default = 0;
+}RawDeviceDataInfo;
+
 // Close the Doxygen group.
 /** @} */
 

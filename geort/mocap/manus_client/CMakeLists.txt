@@ -17,7 +17,7 @@ find_package(geometry_msgs)
 include_directories(include)
 include_directories("$ENV{CONDA_PREFIX}/include")
 
-add_executable(manus_left  src/SDKMinimalClient.cpp src/ClientPlatformSpecific.cpp)
+add_executable(manus_left  src/left_hand_ros.cpp src/ClientPlatformSpecific.cpp)
 add_executable(manus_right src/right_hand_ros.cpp src/ClientPlatformSpecific.cpp)
 add_executable(manus_tracker src/tracker_data_print.cpp src/ClientPlatformSpecific.cpp)
 

@@ -43,11 +43,22 @@ def load_model(tag='', epoch=0):
     checkpoint_root = get_checkpoint_root()
     all_checkpoints = os.listdir(checkpoint_root)
     
-    checkpoint_name = ''
+    matching_checkpoints = []
     for checkpoint in all_checkpoints:
-        if tag in checkpoint:
-            checkpoint_name = checkpoint
-            break 
+        if checkpoint.endswith(tag):
+            matching_checkpoints.append(checkpoint)
+    
+    if len(matching_checkpoints) == 0:
+        raise ValueError(f"No checkpoint found with tag '{tag}'")
+    elif len(matching_checkpoints) == 1:
+        checkpoint_name = matching_checkpoints[0]
+    else:
+        print(f"Multiple checkpoints found with tag '{tag}':")
+        for i, checkpoint in enumerate(matching_checkpoints):
+            print(f"{i}: {checkpoint}")
+        choice = int(input("Please select a checkpoint (enter number): "))
+        checkpoint_name = matching_checkpoints[choice]
+
 
     checkpoint_root = Path(checkpoint_root) / checkpoint_name
     if epoch > 0:

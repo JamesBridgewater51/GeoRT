@@ -218,9 +218,10 @@ class GeoRTTrainer:
 
         # Workspace.
         exp_tag = kwargs.get("tag", "")
-        n_epoch = kwargs.get("epoch", 200)
+        n_epoch = kwargs.get("epoch", 500)
         hand_model_name = self.config["name"]
 
+        w_direction = kwargs.get("w_direction", 1.0)
         w_chamfer = kwargs.get("w_chamfer", 80.0)
         w_curvature = kwargs.get("w_curvature", 0.1)
         w_collision = kwargs.get("w_collision", 0.0)
@@ -314,7 +315,7 @@ class GeoRTTrainer:
 
                 d1 = (point_delta - point).reshape(-1, 3) 
                 d2 = (embedded_point_delta - embedded_point).reshape(-1, 3)
-                direction_loss = -(((F.normalize(d1, dim=-1, p=2, eps=1e-5) * F.normalize(d2, dim=-1, p=2, eps=1e-5)).sum(-1))).mean()
+                direction_loss = 1-(((F.normalize(d1, dim=-1, p=2, eps=1e-5) * F.normalize(d2, dim=-1, p=2, eps=1e-5)).sum(-1))).mean()
 
                 # [Collision loss]
                 # if classifier is not None:
@@ -328,7 +329,7 @@ class GeoRTTrainer:
                 # collision Loss integration pending.
                 collision_loss = torch.tensor([0.0]).cuda()
 
-                loss = direction_loss + \
+                loss = direction_loss * w_direction + \
                        chamfer_loss * w_chamfer + \
                        curvature_loss * w_curvature + \
                        collision_loss * w_collision + \
@@ -364,9 +365,10 @@ if __name__ == '__main__':
     import argparse 
     parser = argparse.ArgumentParser()
     parser.add_argument('-hand', type=str, default='allegro')
-    parser.add_argument('-human_data', type=str, default='human')
+    parser.add_argument('-human_data_path', type=str, default='human')
     parser.add_argument('-ckpt_tag', type=str, default='')
 
+    parser.add_argument('--w_direction', type=int, default=1.0)
     parser.add_argument('--w_chamfer', type=float, default=80.0)
     parser.add_argument('--w_curvature', type=float, default=0.1)
     parser.add_argument('--w_collision', type=float, default=0.0)
@@ -377,12 +379,10 @@ if __name__ == '__main__':
     config = get_config(args.hand)
     trainer = GeoRTTrainer(config)
 
-    human_data_path = get_human_data(args.human_data)
-    print("Training with human data:", human_data_path.as_posix())
-    
     trainer.train(
-        human_data_path, 
+        human_data_path=args.human_data_path, 
         tag=args.ckpt_tag, 
+        w_direction=args.w_direction,
         w_chamfer=args.w_chamfer, 
         w_curvature=args.w_curvature, 
         w_collision=args.w_collision,

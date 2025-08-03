@@ -203,7 +203,7 @@ void SDKMinimalClient::Run()
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 	std::cout << "minimal client is connected, setting up skeletons.\n";
-	// then upload a simple skeleton with a chain. this will just be a right hand for the first userindex.
+	// then upload a simple skeleton with a chain. this will just be a left hand for the first userindex.
 	LoadTestSkeleton();
 
 	Quaternion qut;
@@ -356,7 +356,7 @@ void SDKMinimalClient::LoadTestSkeleton()
 	//Same goes for any other skeleton made for invalid users/gloves.
 	t_SKL.settings.skeletonTargetUserIndexData.userIndex = 0; // just take the first index. make sure this matches in the landscape. 
 
-	CopyString(t_SKL.name, sizeof(t_SKL.name), std::string("RightHand"));
+	CopyString(t_SKL.name, sizeof(t_SKL.name), std::string("LeftHand"));
 
 	SDKReturnCode t_Res = CoreSdk_CreateSkeletonSetup(t_SKL, &t_SklIndex);
 	if (t_Res != SDKReturnCode::SDKReturnCode_Success)
@@ -431,12 +431,12 @@ bool SDKMinimalClient::SetupHandNodes(uint32_t p_SklIndex)
 	// Create an array with the initial position of each hand node. 
 	// Note, these values are just an example of node positions and refer to the hand laying on a flat surface.
 	ManusVec3 t_Fingers[t_NumFingers * t_NumJoints] = {
-		CreateManusVec3(0.024950f, 0.000000f, 0.025320f), //Thumb CMC joint (relative to hand root)
+		CreateManusVec3(-0.024950f, 0.000000f, -0.025320f), //Thumb CMC joint (relative to hand root)
 		CreateManusVec3(0.000000f, 0.000000f, 0.032742f), //Thumb MCP joint (relative to CMC)
 		CreateManusVec3(0.000000f, 0.000000f, 0.028739f), //Thumb IP joint (relative to MCP)
 		CreateManusVec3(0.000000f, 0.000000f, 0.028739f), //Thumb Tip joint (relative to IP)
 
-		CreateManusVec3(0.011181f, 0.000000f, 0.052904f), //Index MCP joint (relative to hand root)
+		CreateManusVec3(-0.011181f, 0.000000f, 0.052904f), //Index MCP joint (relative to hand root)
 		CreateManusVec3(0.000000f, 0.000000f, 0.038257f), //Index PIP joint (relative to MCP)
 		CreateManusVec3(0.000000f, 0.000000f, 0.020884f), //Index DIP joint (relative to PIP)
 		CreateManusVec3(0.000000f, 0.000000f, 0.018759f), //Index Tip joint (relative to DIP)
@@ -446,12 +446,12 @@ bool SDKMinimalClient::SetupHandNodes(uint32_t p_SklIndex)
 		CreateManusVec3(0.000000f, 0.000000f, 0.024766f), //Middle DIP joint (relative to PIP)
 		CreateManusVec3(0.000000f, 0.000000f, 0.019683f), //Middle Tip joint (relative to DIP)
 
-		CreateManusVec3(-0.011274f, 0.000000f, 0.049802f),//Ring MCP joint (relative to hand root)
+		CreateManusVec3(0.011274f, 0.000000f, 0.049802f), //Ring MCP joint (relative to hand root)
 		CreateManusVec3(0.000000f, 0.000000f, 0.039736f), //Ring PIP joint (relative to MCP)
 		CreateManusVec3(0.000000f, 0.000000f, 0.023564f), //Ring DIP joint (relative to PIP)
 		CreateManusVec3(0.000000f, 0.000000f, 0.019868f), //Ring Tip joint (relative to DIP)
 
-		CreateManusVec3(-0.020145f, 0.000000f, 0.047309f),//Pinky MCP joint (relative to hand root)
+		CreateManusVec3(0.020145f, 0.000000f, 0.047309f), //Pinky MCP joint (relative to hand root)
 		CreateManusVec3(0.000000f, 0.000000f, 0.033175f), //Pinky PIP joint (relative to MCP)
 		CreateManusVec3(0.000000f, 0.000000f, 0.018020f), //Pinky DIP joint (relative to PIP)
 		CreateManusVec3(0.000000f, 0.000000f, 0.019129f), //Pinky Tip joint (relative to DIP)
@@ -514,7 +514,7 @@ bool SDKMinimalClient::SetupHandChains(uint32_t p_SklIndex)
 		t_Chain.id = 0; //Every ID needs to be unique per chain in a skeleton.
 		t_Chain.type = ChainType::ChainType_Hand;
 		t_Chain.dataType = ChainType::ChainType_Hand;
-		t_Chain.side = Side::Side_Right;
+		t_Chain.side = Side::Side_Left;
 		t_Chain.dataIndex = 0;
 		t_Chain.nodeIdCount = 1;
 		t_Chain.nodeIds[0] = 0; //this links to the hand node created in the SetupHandNodes
@@ -548,7 +548,7 @@ bool SDKMinimalClient::SetupHandChains(uint32_t p_SklIndex)
 		t_Chain.id = i + 1; //Every ID needs to be unique per chain in a skeleton.
 		t_Chain.type = t_FingerTypes[i];
 		t_Chain.dataType = t_FingerTypes[i];
-		t_Chain.side = Side::Side_Right;
+		t_Chain.side = Side::Side_Left;
 		t_Chain.dataIndex = 0;
 		if (i == 0) // Thumb
 		{

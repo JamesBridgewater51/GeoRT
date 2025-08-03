@@ -1,0 +1,52 @@
+{
+    "name": "o12_t1_right_wo_mimic",  
+    "urdf_path": "assets/o12_hand_description-main/urdf/o12_t1_right_wo_mimic.urdf",
+
+    "base_link": "R_hand_base_link",
+
+    "joint_order": [
+        "R_thumb_roll_joint", "R_thumb_abad_joint", "R_thumb_mcp_joint", "R_thumb_pip_joint", "R_thumb_dip_joint",
+        "R_index_abad_joint", "R_index_mcp_joint", "R_index_pip_joint", "R_index_dip_joint",
+        "R_middle_abad_joint", "R_middle_mcp_joint", "R_middle_pip_joint", "R_middle_dip_joint",
+        "R_ring_mcp_joint", "R_ring_pip_joint", "R_ring_dip_joint",
+        "R_pinky_mcp_joint", "R_pinky_pip_joint", "R_pinky_dip_joint"
+    ],
+
+    "fingertip_link": [
+        {
+            "name": "thumb",
+            "link": "R_thumb_distal_vertices_virtual_coordinates",
+            "joint": ["R_thumb_roll_joint", "R_thumb_abad_joint", "R_thumb_mcp_joint", "R_thumb_pip_joint", "R_thumb_dip_joint"],
+            "center_offset": [0.0, 0.0, 0.0],  
+            "human_hand_id": 4 
+        },
+        {
+            "name": "index",
+            "link": "R_index_distal_vertices_virtual_coordinates",
+            "joint": ["R_index_abad_joint", "R_index_mcp_joint", "R_index_pip_joint", "R_index_dip_joint"],
+            "center_offset": [0.0, 0.0, 0.0],
+            "human_hand_id": 8 
+        },
+        {
+            "name": "middle",
+            "link": "R_middle_distal_vertices_virtual_coordinates",
+            "joint": ["R_middle_abad_joint", "R_middle_mcp_joint", "R_middle_pip_joint", "R_middle_dip_joint"],
+            "center_offset": [0.0, 0.0, 0.0],
+            "human_hand_id": 12
+        },
+        {
+            "name": "ring",
+            "link": "R_ring_distal_vertices_virtual_coordinates",
+            "joint": ["R_ring_mcp_joint", "R_ring_pip_joint", "R_ring_dip_joint"],
+            "center_offset": [0.0, 0.0, 0.0],
+            "human_hand_id": 16 
+        },
+        {
+            "name": "pinky",
+            "link": "R_pinky_distal_vertices_virtual_coordinates",
+            "joint": ["R_pinky_mcp_joint", "R_pinky_pip_joint", "R_pinky_dip_joint"],
+            "center_offset": [0.0, 0.0, 0.0],
+            "human_hand_id": 20  
+        }
+    ]
+}

@@ -4,6 +4,10 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+"""
+How to use MediaPipeMocap for live teleoperation in the simulator.
+"""
+
 from geort.mocap.mediapipe_mocap import MediaPipeMocap
 from geort.env.hand import HandKinematicModel
 from geort import load_model, get_config

@@ -54,6 +54,12 @@ class MediaPipeHandProcessor:
         return q_interpolated / np.linalg.norm(q_interpolated)
 
     def forward(self, hand_detection_result, apply_ema=False):
+        """
+        Performs canonicalization. 
+        It establishes a local coordinate frame based on the wrist and fingers. 
+        It then transforms all 21 keypoints into this local frame. 
+        This makes the data independent of the hand's global position and orientation in front of the camera, which is essential for the retargeting model.
+        """
         # fine, apply_ema seems futile for MediaPipe.
         z_axis = hand_detection_result[9] - hand_detection_result[0]
         z_axis = z_axis / np.linalg.norm(z_axis)
@@ -88,6 +94,10 @@ class MediaPipeHandProcessor:
 
 
 class MediaPipeHandDetector:
+    """
+    A wrapper around Google's MediaPipe library.
+      It takes a raw image and returns the detected 21 hand landmarks in both image and world coordinates.
+    """
     MARGIN = 10  # pixels
     FONT_SIZE = 1
     FONT_THICKNESS = 1

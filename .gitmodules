@@ -1,0 +1,15 @@
+[submodule "third_party/OpenWBT-ExoSkel"]
+	path = third_party/OpenWBT-ExoSkel
+	url = git@github.com:jxyjxyw/OpenWBT-ExoSkel.git
+[submodule "third_party/unitree_sdk2_python"]
+	path = third_party/unitree_sdk2_python
+	url = https://github.com/unitreerobotics/unitree_sdk2_python.git
+[submodule "third_party/unitree_ros2"]
+	path = third_party/unitree_ros2
+	url = https://github.com/unitreerobotics/unitree_ros2
+[submodule "third_party/dex_retargeting"]
+	path = third_party/dex_retargeting
+	url = git@github.com:JamesBridgewater51/dex-retargeting.git
+[submodule "third_party/manus_core_sdk_ros2_bridge"]
+	path = third_party/manus_core_sdk_ros2_bridge
+	url = git@github.com:JamesBridgewater51/MANUS_Core_SDK.git

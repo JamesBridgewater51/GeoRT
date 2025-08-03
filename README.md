@@ -179,3 +179,24 @@ For any inquiries, please open an issue or contact the authors via email at ``zh
 CC-by-NC license
 
 
+## O12 right hand natural joint configurations
+
+* R_index_abad_joint: -50~40
+* R_index_dip_joint: -60-90
+* R_index_mcp_joint: -80-90
+* R_index_pip_joint: -50-130
+* R_middle_abd_joint: -50~40
+* R_middle_dip_joint: -60-90
+* R_middle_mcp_joint: -80-90
+* R_middle_pip_joint: -50-130
+* R_pinky_dip_joint: -60-90
+* R_pinky_mcp_joint: -80-90
+* R_pinky_pip_joint: -50-130
+* R_ring_dip_joint: -60-90
+* R_ring_mcp_joint: -80-90
+* R_ring_pip_joint: -50-130
+* R_thumb_abad_joint: -50~85
+* R_thumb_dip_joint: -60-90
+* R_thumb_mcp_joint: -53-59
+* R_thumb_pip_joint: -90-30
+* R_thumb_roll_joint: -20-130

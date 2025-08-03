@@ -23,7 +23,7 @@
 
 class SDKClientPlatformSpecific
 {
-protected:
+public:
 	/// @brief Initialise things only needed for this platform.
 	bool PlatformSpecificInitialization(void);
 

@@ -12,7 +12,41 @@
 #include <fstream>
 #include <iostream>
 #include <thread>
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/float32_multi_array.hpp"
 
+struct Quaternion{
+    float w, x, y, z;
+};
+
+struct Vector3 {
+    float x, y, z;
+};
+
+Vector3 QuaternionToEuler(const Quaternion& q) {
+
+	Vector3 euler;
+
+    // Roll (x-axis rotation)
+    float sinr_cosp = 2 * (q.w * q.x + q.y * q.z);
+    float cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y);
+    euler.x = std::atan2(sinr_cosp, cosr_cosp);
+
+    // Pitch (y-axis rotation)
+    float sinp = 2 * (q.w * q.y - q.z * q.x);
+    if (std::abs(sinp) >= 1)
+        euler.y = std::copysign(M_PI / 2, sinp); // Use 90 degrees if out of range
+    else
+        euler.y = std::asin(sinp);
+
+    // Yaw (z-axis rotation)
+    float siny_cosp = 2 * (q.w * q.z + q.x * q.y);
+    float cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
+    euler.z = std::atan2(siny_cosp, cosy_cosp);
+
+	return euler;
+}
 SDKMinimalClient* SDKMinimalClient::s_Instance = nullptr;
 
 int main(int argc, char * argv[])
@@ -136,6 +170,25 @@ ClientReturnCode SDKMinimalClient::RegisterAllCallbacks()
 /// @brief main loop
 void SDKMinimalClient::Run()
 {
+		// ROS node setup
+    auto node = std::make_shared<rclcpp::Node>("manus_node");
+	
+	auto x_publisher = node->create_publisher<std_msgs::msg::Float32MultiArray>("x_manus_rotations", 10);
+    auto y_publisher = node->create_publisher<std_msgs::msg::Float32MultiArray>("y_manus_rotations", 10);
+    auto z_publisher = node->create_publisher<std_msgs::msg::Float32MultiArray>("z_manus_rotations", 10);
+	
+	auto pos_publisher = node->create_publisher<std_msgs::msg::Float32MultiArray>("manus_positions", 10);
+	auto quat_publisher = node->create_publisher<std_msgs::msg::Float32MultiArray>("manus_quats", 10);
+
+	// Initialize vectors to store x, y, z rotations
+    std::vector<float> x_rotations;
+    std::vector<float> y_rotations;
+    std::vector<float> z_rotations;
+	std::vector<float> positions;
+	std::vector<float> quats;
+
+	std_msgs::msg::Float32MultiArray x_msg, y_msg, z_msg, pos_msg, quat_msg;
+
 	// first loop until we get a connection
 	std::cout << "minimal client is connecting to host. (make sure it is running)\n";
 	while (Connect() != ClientReturnCode::ClientReturnCode_Success)
@@ -147,6 +200,8 @@ void SDKMinimalClient::Run()
 	std::cout << "minimal client is connected, setting up skeletons.\n";
 	// then upload a simple skeleton with a chain. this will just be a left hand for the first userindex.
 	LoadTestSkeleton();
+
+	Quaternion qut;
 
 	// then loop and get its data while waiting for escape key to end it
 	while (m_Running)
@@ -173,13 +228,58 @@ void SDKMinimalClient::Run()
 					std::cout << "Skeleton ID: " << skeleton.info.id << std::endl;
 					std::cout << "Number of joints: " << skeleton.info.nodesCount << std::endl;
 					std::cout << "Publish Time: " << skeleton.info.publishTime.time << std::endl;
-					// Print joint positions
+					// Print joint rotations
+					// Clear previous rotations
+					x_rotations.clear();
+					y_rotations.clear();
+					z_rotations.clear();
+					positions.clear();
+					quats.clear();
 					for (int i=0; i < skeleton.info.nodesCount; i++)
 					{
-						SkeletonNode joint = skeleton.nodes[i];
-						std::cout << "Joint ID: " << joint.id << std::endl;
-						std::cout << "Position: (" << joint.transform.position.x << ", " << joint.transform.position.y << ", " << joint.transform.position.z << ")" << std::endl;
+						SkeletonNode node = skeleton.nodes[i];
+						std::cout << "Joint ID: " << node.id << std::endl;
+						std::cout << "Position: (" << node.transform.position.x << ", " << node.transform.position.y << ", " << node.transform.position.z << ")" << std::endl;
+
+						positions.push_back(node.transform.position.x);
+						positions.push_back(node.transform.position.y);
+						positions.push_back(node.transform.position.z);
+
+						qut.w = node.transform.rotation.w;
+						qut.x = node.transform.rotation.x;
+						qut.y = node.transform.rotation.y;
+						qut.z = node.transform.rotation.z;
+
+						std::cout << node.id << " " << qut.x << " " << qut.y << " " << qut.z << " " << qut.w << std::endl;
+						quats.push_back(qut.x);
+						quats.push_back(qut.y);
+						quats.push_back(qut.z);
+						quats.push_back(qut.w);
+
+
+						Vector3 euler = QuaternionToEuler(qut);
+
+						// std::cout << "Rotation: (" << euler.x << ", " << euler.y << ", " << euler.z <<")" << std::endl;
+						std::cout << std::endl;
+
+						x_rotations.push_back(euler.x);
+						y_rotations.push_back(euler.y);
+						z_rotations.push_back(euler.z);			
 					}
+
+					// Publish joint rotations as float arrays
+					x_msg.data = x_rotations;
+					y_msg.data = y_rotations;
+					z_msg.data = z_rotations;
+					pos_msg.data = positions;
+					quat_msg.data = quats;
+
+					x_publisher->publish(x_msg);
+					y_publisher->publish(y_msg);
+					z_publisher->publish(z_msg);
+					pos_publisher->publish(pos_msg);
+					quat_publisher->publish(quat_msg);
+				
 				}
 			}
 			m_FrameCounter++;

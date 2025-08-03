@@ -9,8 +9,7 @@ from geort.utils.path import get_human_data
 
 
 class ReplayMocap:
-    def __init__(self, human_data):
-        human_data_path = get_human_data(human_data)
+    def __init__(self, human_data_path):
         self.human_points = np.load(human_data_path) # [T, N, 3]
         self.t = 0
         self.T = len(self.human_points)

@@ -1,1 +1,16 @@
 *.pyc
+build/
+install/
+log/
+third_party/
+checkpoint/
+data/
+*.log
+.vscode/
+.pytest_cache/
+__pycache__/
+*.egg-info/
+*.pkl
+geort/control/o12_hand/canbus_test
+geort/control/o12_hand/libcanbus
+geort/control/o12_hand/sdk_dev_cpp

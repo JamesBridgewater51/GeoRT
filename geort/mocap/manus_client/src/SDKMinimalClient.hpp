@@ -98,10 +98,18 @@ public:
 	static void OnSkeletonStreamCallback(const SkeletonStreamInfo* const p_SkeletonStreamInfo);
 	static void OnTrackerStreamCallback(const TrackerStreamInfo* const p_TrackerStreamInfo);
 	static void OnRawSkeletonStreamCallback(const SkeletonStreamInfo* const p_RawSkeletonStreamInfo);
+	static SDKMinimalClient* s_Instance;
+	bool SetupHandNodes(uint32_t p_SklIndex, Side p_Side);
+	bool SetupHandChains(uint32_t p_SklIndex, Side p_Side);
 
 protected:
 
-	ClientReturnCode Connect();
+    // New direct-connect overload: pass "10.180.241.81" or "my-core-host"
+    ClientReturnCode Connect(const std::string& ipAddress, const std::string& hostname);
+
+    // Backward-compatible path: keeps discovery as a fallback when no target is provided.
+    ClientReturnCode Connect(); // optional: legacy behavior
+
 	ClientReturnCode UpdateBeforeDisplayingData();
 	bool SetupHandNodes(uint32_t p_SklIndex);
 	bool SetupHandChains(uint32_t p_SklIndex);
@@ -111,7 +119,6 @@ protected:
 	NodeSetup CreateNodeSetup(uint32_t p_Id, uint32_t p_ParentId, float p_PosX, float p_PosY, float p_PosZ, std::string p_Name);
 	static ManusVec3 CreateManusVec3(float p_X, float p_Y, float p_Z);
 
-	static SDKMinimalClient* s_Instance;
 	bool m_Running = true;
 
 	std::mutex m_SkeletonMutex;

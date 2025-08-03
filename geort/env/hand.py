@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import numpy as np
-import sapien.core as sapien
+import sapien
 from sapien.utils import Viewer
 from torch.utils.data import DataLoader
 import torch
@@ -19,14 +19,28 @@ from tqdm import tqdm
 import os
 from pathlib import Path 
 import math
+from scipy.spatial.transform import Rotation as R
+
+SAPIEN_VERSION = sapien.__version__
+
+# sapien 3.x changed tremendously its APIs.
+if SAPIEN_VERSION.startswith("3."):
+    SAPIEN_USE_OLD_API = False
+else:
+    SAPIEN_USE_OLD_API = True
+    sapien = sapien.core
+
+if not SAPIEN_USE_OLD_API:
+    SCENE = sapien.Scene()
 
 class HandKinematicModel:
     def __init__(self, 
                  scene=None, 
                  render=False, 
-                 hand=None, 
                  hand_urdf='', 
                  n_hand_dof=16, 
+                 trans=[0, 0, 0.35],
+                 quat=[0.695, 0, -0.718, 0],
                  base_link='base_link', 
                  joint_names=[],
                  # Ideally, these two guys (PD controller args) shouldn't be here. 
@@ -36,7 +50,7 @@ class HandKinematicModel:
                  kd=10):
         
         self.engine = None
-        if scene is None:
+        if scene is None and SAPIEN_USE_OLD_API:
             engine = sapien.Engine()
             
             if render:
@@ -55,19 +69,19 @@ class HandKinematicModel:
             scene_config.solver_velocity_iterations = 1
             scene = engine.create_scene(scene_config)  
             self.engine = engine 
+        elif scene is None and not SAPIEN_USE_OLD_API:
+            scene = SCENE
+            renderer = None
 
         self.scene = scene 
         self.renderer = renderer 
 
-        if hand is not None:
-            self.hand = hand
-
-        else:
-            loader = scene.create_urdf_loader()
-            self.hand = loader.load(hand_urdf)
-            self.hand.set_root_pose(sapien.Pose([0, 0, 0.35], [0.695, 0, -0.718, 0]))
+        loader = self.scene.create_urdf_loader()
+        self.hand = loader.load(hand_urdf)
+        self.hand.set_root_pose(sapien.Pose(trans, quat))
 
         self.pmodel = self.hand.create_pinocchio_model()
+        self.trans, self.quat = trans, quat
 
         # Setup hand base link.
         self.base_link = get_entity_by_name(self.hand.get_links(), base_link)
@@ -184,6 +198,113 @@ class HandKinematicModel:
         for i in range(len(qpos)):
             self.all_joints[i].set_drive_target(self.qpos_target[i])
 
+class SkeletonViewer:
+    """
+    Manages the creation and live updates of a simple skeleton visualization in a Sapien scene.
+    """
+    def __init__(self, scene, renderer, joint_radius=0.005, bone_radius=0.003):
+        self.scene = scene
+        self.renderer = renderer
+        assert (self.renderer is not None and SAPIEN_USE_OLD_API) or not SAPIEN_USE_OLD_API, "Renderer must be set for SkeletonViewer."
+        import json
+        skeleton_config = json.loads(
+            """
+        {
+            "num_joints": 21,
+        "bones": [
+            [0, 1], [0, 5], [0, 9], [0, 13], [0, 17], 
+            [1, 2], [2, 3], [3, 4],
+            [5, 6], [6, 7], [7, 8],
+            [9, 10], [10, 11], [11, 12],
+            [13, 14], [14, 15], [15, 16],
+            [17, 18], [18, 19], [19, 20]
+        ]
+        }
+                                    """
+                                    )
+        self.config = skeleton_config
+        self.joint_radius = joint_radius
+        self.bone_radius = bone_radius
+        
+        self.joint_actors = []
+        self.bone_actors = []
+        
+        self._create_actors()
+
+    def _create_actors(self):
+        if SAPIEN_USE_OLD_API:
+            sphere_material = self.renderer.create_material()
+            sphere_material.set_base_color([1, 0, 0, 1])  # Red for joints
+            cylinder_material = self.renderer.create_material()
+            cylinder_material.set_base_color([0, 0, 1, 1])
+
+        """ Creates sphere and cylinder actors for joints and bones. """
+        # Create an actor for each joint
+        builder = self.scene.create_actor_builder()
+        for i in range(self.config["num_joints"]):
+            material = sapien.render.RenderMaterial(base_color=[1, 0, 0, 1]) if not SAPIEN_USE_OLD_API else sphere_material
+            builder.add_sphere_visual(radius=self.joint_radius, material=material) # Red joints
+            joint_actor = builder.build_static(name=f"skel_joint_{i}")
+            self.joint_actors.append(joint_actor)
+        
+        # Create an actor for each bone
+        builder = self.scene.create_actor_builder()
+        for i in range(len(self.config["bones"])):
+            material = sapien.render.RenderMaterial(base_color=[0, 0, 1, 1]) if not SAPIEN_USE_OLD_API else cylinder_material
+            builder.add_capsule_visual(radius=self.bone_radius, half_length=0.01, material=material) # Blue bones
+            bone_actor = builder.build_static(name=f"skel_bone_{i}")
+            self.bone_actors.append(bone_actor)
+
+    def _calculate_bone_pose(self, p_start, p_end):
+        """Calculates the pose for a cylinder to connect two points."""
+        # Position is the midpoint
+        midpoint = (p_start + p_end) / 2
+        
+        # Calculate orientation
+        direction = p_end - p_start
+        height = np.linalg.norm(direction)
+        if height < 1e-6: # Avoid division by zero
+            return sapien.Pose(p=midpoint), 0
+            
+        direction /= height
+        
+        # Cylinder's default axis is Y, get rotation from (0,1,0) to direction
+        y_axis = np.array([1, 0, 0])
+        rot_axis = np.cross(y_axis, direction)
+        rot_angle = np.arccos(np.dot(y_axis, direction))
+        
+        if np.linalg.norm(rot_axis) < 1e-6:
+             # Vectors are parallel or anti-parallel
+             q = [1, 0, 0, 0] if np.allclose(direction, y_axis) else [0, 1, 0, 0]
+        else:
+            q = R.from_rotvec(rot_angle * (rot_axis / np.linalg.norm(rot_axis))).as_quat()
+            q = np.roll(q, 1)  # Convert from (x, y, z, w) to (w, x, y, z) for Sapien
+
+        return sapien.Pose(p=midpoint, q=q), height
+
+    def update(self, joint_positions=None):
+        """Updates the poses of all skeleton actors based on the model's current qpos."""
+        # Update joint spheres
+        for i, actor in enumerate(self.joint_actors):
+            actor.set_pose(sapien.Pose(p=joint_positions[i]))
+            
+        # Update bone cylinders
+        for i, bone_indices in enumerate(self.config["bones"]):
+            start_idx, end_idx = bone_indices
+            p_start = joint_positions[start_idx]
+            p_end = joint_positions[end_idx]
+            
+            pose, height = self._calculate_bone_pose(p_start, p_end)
+            actor = self.bone_actors[i]
+            actor.set_pose(pose)
+
+            # Update cylinder scale to match bone length
+            # Cylinder's visual body is tied to its first collision shape
+            # FIXME: the  `get_visual_bodies` method is deprecated since Sapien 3.x, and new version currently does not provide APIs to `set_scale`.
+            # visual = actor.get_visual_bodies()[0]
+            # Half-length is used for scale
+            # visual.set_scale([1, height / (2 * visual.half_length), 1])
+
 class HandViewerEnv:
     def __init__(self, model):
         scene = model.get_scene()
@@ -194,10 +315,13 @@ class HandViewerEnv:
 
         viewer = Viewer(model.get_renderer())
         viewer.set_scene(scene) 
-        viewer.window.set_camera_position([0.1550926,-0.1623763, 0.7064089])
-        viewer.window.set_camera_rotation([0.8716827, 0.3260138, 0.12817779, 0.3427167])
-        viewer.window.set_camera_parameters(near=0.05, far=100, fovy=1)
-        
+        if SAPIEN_USE_OLD_API:
+            viewer.window.set_camera_position([0.0457491, -0.0509193, 0.455975])
+            viewer.window.set_camera_rotation([0.8716827, 0.3260138, 0.12817779, 0.3427167])
+        else:
+            viewer.window.set_camera_pose(sapien.Pose([0.18299, -0.0560369, 0.661718], [0.253402, -0.405266, 0.117983, 0.870418]))
+        viewer.window.set_camera_parameters(near=0.1, far=100, fovy=1)
+
         self.model = model
         self.scene = scene 
         self.viewer = viewer 

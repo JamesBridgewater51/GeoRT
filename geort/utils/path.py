@@ -31,10 +31,15 @@ def get_human_data_output_path(human_data):
 
 def get_human_data(name):
     data_root = Path(get_data_root())
+    # `os.listdir` returns a list of files (with extensions) in the directory.
     all_data_names = os.listdir(data_root)
+    # Filter out only *.npy, and remove exts.
+    all_data_names = [f for f in all_data_names if f.endswith('.npy')]
+    all_data_names = [f[:-4] for f in all_data_names]  # Remove '.npy' extension
+
     for data_name in all_data_names:
-        if name in data_name:
-            return data_root / data_name
+        if name == data_name:
+            return data_root / (data_name + '.npy')
 
 
 if __name__ == '__main__':

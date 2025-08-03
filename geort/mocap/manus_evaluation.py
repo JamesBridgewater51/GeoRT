@@ -4,6 +4,13 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+"""
+Main Application (manus_evaluation.py)
+
+    This script simply instantiates mocap = ManusMocap() and uses it in the main loop. All the complexity of ROS, C++, and ZMQ is hidden behind the simple mocap.get() call.
+
+"""
+
 from geort.mocap.manus_mocap import ManusMocap
 from geort.env.hand import HandKinematicModel
 from geort import load_model, get_config

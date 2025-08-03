@@ -38,11 +38,16 @@ def load_json(filename):
 
 def get_config(config_name):
     config_root = Path(get_package_root())  / "geort" / "config"
+
+    # `os.listdir` returns a list of files (with extensions) in the directory.
     all_configs = os.listdir(config_root)
+    # Filter out only JSON files and remove extensions.
+    all_configs = [f for f in all_configs if f.endswith('.json')]
+    all_configs = [f[:-5] for f in all_configs]  # Remove '.json' extension
     
     for config in all_configs:
-        if config_name in config:
-            return load_json(config_root / config)
+        if config_name == config:
+            return load_json(config_root / f"{config}.json")
 
     config_root_str = config_root.as_posix()
     assert False, f"Configuration {config_name}.json is not found in {config_root_str}"
